@@ -12,7 +12,7 @@ Two files can be extracted from "toronto.zip":
 2) "toronto_edges.txt": The items in each line are: CENTRELINE_ID\_\<and\>\_LINEAR_NAME_ID(Street Name ID)\_\<and\>\_LINEAR_NAME_FULL(Full street name)\_\<and\>\_FROM_INTERSECTION_ID\_\<and\>\_TO_INTERSECTION_ID\_\<and\>\_DISTANCE, such as "30079678\_\<and\>\_ 19155\_\<and\>\_Waterfront Trl\_\<and\>\_30079676\_\<and\>\_30079656\_\<and\>\_0.407088173808", which means that CENTRELINE_ID "30079678" corresponds to Street Name ID "19155", and has a name "Waterfront Trl", and is between two road intersection IDs "30079676" and "30079656", and has a distance of "0.407088173808" km.
 
 Two files can be extracted from "dblp_v12.zip":
-1) 
+1) "dblp_v12_fields_2498k.txt": The items in each line are: Fields_of_study_ID\<\&\>Fields_of_study_name 
 
 
 
