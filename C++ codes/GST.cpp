@@ -955,6 +955,7 @@ graph_hash_of_mixed_weighted FastAPP(graph_hash_of_mixed_weighted& input_graph, 
 		int g_vertex = *it;
 		LWPs_to_groups[g_vertex] = find_LWPs_to_g(group_graph, G_2, g_vertex, lambda);
 	}
+	//G_2.clear();
 
 	int g_min = find_g_min(group_graph, cumpulsory_group_vertices); // find g_min
 	//cout << "g_min=" << g_min << endl;
@@ -1232,7 +1233,7 @@ graph_hash_of_mixed_weighted ImprovAPP(graph_hash_of_mixed_weighted& input_graph
 		//print_unordered_map_int_double(LWPs_to_groups[g_vertex].first);
 		//print_unordered_map_int_int(LWPs_to_groups[g_vertex].second);
 	}
-
+	
 
 	int g_min = find_g_min(group_graph, cumpulsory_group_vertices); // find g_min
 	//cout << "g_min=" << g_min << endl;
@@ -1334,7 +1335,7 @@ graph_hash_of_mixed_weighted PartialOPT(graph_hash_of_mixed_weighted& input_grap
 		/*time complexity: O(|g_min||E|+|g_min||T-h||V|+|g_min||V|log|V|)*/
 		graph_hash_of_mixed_weighted theta_Gamma;
 		if (Gamma_dashdash.size() > 1) {
-			theta_Gamma = FastAPP(input_graph, group_graph, Gamma_dashdash, lambda);
+			theta_Gamma = exIhlerA(input_graph, group_graph, Gamma_dashdash, lambda);
 		}
 		else { // theta_Gamma only contains i
 			graph_hash_of_mixed_weighted_add_vertex(theta_Gamma, i, 1);			
@@ -2305,7 +2306,7 @@ void read_Movielens_25m(graph_hash_of_mixed_weighted& read_graph, graph_hash_of_
 #pragma region
 void solve_VWGSTP_exp(string data_name, string save_name, int iteration_times, int V, int T, double lambda, double h,
 	bool use_ENSteiner, bool use_IhlerA, bool use_exENSteiner, bool use_exIhlerA, bool use_FastAPP, bool use_fastAPP2, bool use_ImprovAPP,
-	bool use_PartialOPT, bool use_DPBF, bool vertex_groups_sample_method) {
+	bool use_PartialOPT, bool use_DPBF, bool use_Basic, bool vertex_groups_sample_method) {
 
 	/*output*/
 	ofstream outputFile;
@@ -2315,7 +2316,7 @@ void solve_VWGSTP_exp(string data_name, string save_name, int iteration_times, i
 	outputFile.open(save_name);
 	outputFile << "V,T,lambda,h,g_min_size,cost_DPBF,time_DPBF,cost_ENSteiner,time_ENSteiner,cost_IhlerA,time_IhlerA,cost_exENSteiner,time_exENSteiner," <<
 		"cost_exIhlerA,time_exIhlerA,cost_FastAPP,time_FastAPP,cost_fastAPP2,time_fastAPP2,cost_ImprovAPP,time_ImprovAPP,cost_PartialOPT,time_PartialOPT," <<
-		"cost_exENSteinerP,time_exENSteinerP,cost_exIhlerAP,time_exIhlerAP,cost_FastAPPP,time_FastAPPP" << endl;
+		"cost_exENSteinerP,time_exENSteinerP,cost_exIhlerAP,time_exIhlerAP,cost_FastAPPP,time_FastAPPP,cost_Basic,time_Basic" << endl;
 
 	/*read raw dataset*/
 	graph_hash_of_mixed_weighted read_graph, read_group_graph;
@@ -2434,11 +2435,11 @@ void solve_VWGSTP_exp(string data_name, string save_name, int iteration_times, i
 
 		/*solve instance in each maximal component*/
 		double time_DPBF = 0, time_ENSteiner = 0, time_IhlerA = 0, time_exENSteiner = 0, time_exIhlerA = 0, time_FastAPP = 0, time_fastAPP2 = 0, 
-			time_ImprovAPP = 0, time_PartialOPT = 0, time_exENSteinerP = 0, time_exIhlerAP = 0, time_FastAPPP = 0;
+			time_ImprovAPP = 0, time_PartialOPT = 0, time_exENSteinerP = 0, time_exIhlerAP = 0, time_FastAPPP = 0, time_Basic = 0;
 		double final_cost_DPBF = INT_MAX, final_cost_ENSteiner = INT_MAX, final_cost_IhlerA = INT_MAX, 
 			final_cost_exENSteiner = INT_MAX, final_cost_exIhlerA = INT_MAX, final_cost_FastAPP = INT_MAX, 
 			final_cost_fastAPP2 = INT_MAX, final_cost_ImprovAPP = INT_MAX, final_cost_PartialOPT = INT_MAX, 
-			final_cost_exENSteinerP = INT_MAX, final_cost_exIhlerAP = INT_MAX, final_cost_FastAPPP = INT_MAX;
+			final_cost_exENSteinerP = INT_MAX, final_cost_exIhlerAP = INT_MAX, final_cost_FastAPPP = INT_MAX, final_cost_Basic = INT_MAX;
 
 		int g_min_size = 0; // this g_min is the sum of all g_mins in all components
 
@@ -2599,6 +2600,18 @@ void solve_VWGSTP_exp(string data_name, string save_name, int iteration_times, i
 					}
 				}
 
+				if (use_Basic) {
+					auto begin = std::chrono::high_resolution_clock::now();
+					graph_hash_of_mixed_weighted solu_Basic = graph_hash_of_mixed_weighted_BasicProgressive_vertex_edge_weighted(subgraph_g, subgraph_g_group_graph, sampled_skill_vertices, lambda);
+					auto end = std::chrono::high_resolution_clock::now();
+					double runningtime = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() / 1e9; // s
+					time_Basic = time_Basic + (double)runningtime;
+					double cost = graph_hash_of_mixed_weighted_lambda_cost(solu_Basic, lambda);
+					if (final_cost_Basic > cost) {
+						final_cost_Basic = cost;
+					}
+				}
+
 			}
 		}
 
@@ -2616,7 +2629,8 @@ void solve_VWGSTP_exp(string data_name, string save_name, int iteration_times, i
 				final_cost_PartialOPT << "," << time_PartialOPT << "," <<
 				final_cost_exENSteinerP << "," << time_exENSteinerP << "," <<
 				final_cost_exIhlerAP << "," << time_exIhlerAP << "," <<
-				final_cost_FastAPPP << "," << time_FastAPPP << endl;
+				final_cost_FastAPPP << "," << time_FastAPPP << "," <<
+				final_cost_Basic << "," << time_Basic << endl;
 		}
 		else {
 			times--;
@@ -2837,27 +2851,27 @@ void solve_VWGSTP_toronto_experiments() {
 		/*uniform V*/
 		if (1) {
 			use_ENSteiner = false, use_IhlerA = false;
-			solve_VWGSTP_exp("toronto", "EXP_solve_VWGSTP_toronto_uniform_V_1.csv", iteration_times, 25073, T, lambda, h, use_ENSteiner, use_IhlerA, true, true, true, 0, true, true, true, true);
-			solve_VWGSTP_exp("toronto", "EXP_solve_VWGSTP_toronto_uniform_V_2.csv", iteration_times, 32073, T, lambda, h, use_ENSteiner, use_IhlerA, true, true, true, 0, true, true, true, true);
-			solve_VWGSTP_exp("toronto", "EXP_solve_VWGSTP_toronto_uniform_V_3.csv", iteration_times, 39073, T, lambda, h, use_ENSteiner, use_IhlerA, true, true, true, 0, true, true, true, true);
+			solve_VWGSTP_exp("toronto", "EXP_solve_VWGSTP_toronto_uniform_V_1.csv", iteration_times, 25073, T, lambda, h, use_ENSteiner, use_IhlerA, true, true, true, 0, true, true, true, 0, true);
+			solve_VWGSTP_exp("toronto", "EXP_solve_VWGSTP_toronto_uniform_V_2.csv", iteration_times, 32073, T, lambda, h, use_ENSteiner, use_IhlerA, true, true, true, 0, true, true, true, 0, true);
+			solve_VWGSTP_exp("toronto", "EXP_solve_VWGSTP_toronto_uniform_V_3.csv", iteration_times, 39073, T, lambda, h, use_ENSteiner, use_IhlerA, true, true, true, 0, true, true, true, 0, true);
 			use_ENSteiner = true, use_IhlerA = true;
-			solve_VWGSTP_exp("toronto", "EXP_solve_VWGSTP_toronto_uniform_V_4.csv", iteration_times, V, T, lambda, h, use_ENSteiner, use_IhlerA, true, true, true, 0, true, true, true, true);
+			solve_VWGSTP_exp("toronto", "EXP_solve_VWGSTP_toronto_uniform_V_4.csv", iteration_times, V, T, lambda, h, use_ENSteiner, use_IhlerA, true, true, true, 0, true, true, true, 0, true);
 		}
 
 		/*uniform T*/
 		if (1) {
 			use_ENSteiner = false, use_IhlerA = false;
-			solve_VWGSTP_exp("toronto", "EXP_solve_VWGSTP_toronto_uniform_T_1.csv", iteration_times, V, 6, lambda, h, use_ENSteiner, use_IhlerA, true, true, true, 0, true, true, true, true);
-			solve_VWGSTP_exp("toronto", "EXP_solve_VWGSTP_toronto_uniform_T_2.csv", iteration_times, V, 7, lambda, h, use_ENSteiner, use_IhlerA, true, true, true, 0, true, true, true, true);
-			solve_VWGSTP_exp("toronto", "EXP_solve_VWGSTP_toronto_uniform_T_3.csv", iteration_times, V, 9, lambda, h, use_ENSteiner, use_IhlerA, true, true, true, 0, true, true, true, true);
+			solve_VWGSTP_exp("toronto", "EXP_solve_VWGSTP_toronto_uniform_T_1.csv", iteration_times, V, 6, lambda, h, use_ENSteiner, use_IhlerA, true, true, true, 0, true, true, true, 0, true);
+			solve_VWGSTP_exp("toronto", "EXP_solve_VWGSTP_toronto_uniform_T_2.csv", iteration_times, V, 7, lambda, h, use_ENSteiner, use_IhlerA, true, true, true, 0, true, true, true, 0, true);
+			solve_VWGSTP_exp("toronto", "EXP_solve_VWGSTP_toronto_uniform_T_3.csv", iteration_times, V, 9, lambda, h, use_ENSteiner, use_IhlerA, true, true, true, 0, true, true, true, 0, true);
 		}
 
 		/*uniform lambda*/
 		if (1) {
 			use_ENSteiner = false, use_IhlerA = false;
-			solve_VWGSTP_exp("toronto", "EXP_solve_VWGSTP_toronto_uniform_lambda_1.csv", iteration_times, V, T, 0, h, use_ENSteiner, use_IhlerA, true, true, true, 0, true, true, true, true);
-			solve_VWGSTP_exp("toronto", "EXP_solve_VWGSTP_toronto_uniform_lambda_2.csv", iteration_times, V, T, 0.67, h, use_ENSteiner, use_IhlerA, true, true, true, 0, true, true, true, true);
-			solve_VWGSTP_exp("toronto", "EXP_solve_VWGSTP_toronto_uniform_lambda_3.csv", iteration_times, V, T, 1, h, use_ENSteiner, use_IhlerA, true, true, true, 0, true, true, true, true);
+			solve_VWGSTP_exp("toronto", "EXP_solve_VWGSTP_toronto_uniform_lambda_1.csv", iteration_times, V, T, 0, h, use_ENSteiner, use_IhlerA, true, true, true, 0, true, true, true, 0, true);
+			solve_VWGSTP_exp("toronto", "EXP_solve_VWGSTP_toronto_uniform_lambda_2.csv", iteration_times, V, T, 0.67, h, use_ENSteiner, use_IhlerA, true, true, true, 0, true, true, true, 0, true);
+			solve_VWGSTP_exp("toronto", "EXP_solve_VWGSTP_toronto_uniform_lambda_3.csv", iteration_times, V, T, 1, h, use_ENSteiner, use_IhlerA, true, true, true, 0, true, true, true, 0, true);
 		}
 	}
 
@@ -2866,24 +2880,24 @@ void solve_VWGSTP_toronto_experiments() {
 		use_ENSteiner = false, use_IhlerA = false;
 		/*size V*/
 		if (1) {
-			solve_VWGSTP_exp("toronto", "EXP_solve_VWGSTP_toronto_size_V_1.csv", iteration_times, 25073, T, lambda, h, use_ENSteiner, use_IhlerA, true, true, true, 0, true, true, true, false);
-			solve_VWGSTP_exp("toronto", "EXP_solve_VWGSTP_toronto_size_V_2.csv", iteration_times, 32073, T, lambda, h, use_ENSteiner, use_IhlerA, true, true, true, 0, true, true, true, false);
-			solve_VWGSTP_exp("toronto", "EXP_solve_VWGSTP_toronto_size_V_3.csv", iteration_times, 39073, T, lambda, h, use_ENSteiner, use_IhlerA, true, true, true, 0, true, true, true, false);
-			solve_VWGSTP_exp("toronto", "EXP_solve_VWGSTP_toronto_size_V_4.csv", iteration_times, V, T, lambda, h, use_ENSteiner, use_IhlerA, true, true, true, 0, true, true, true, false);
+			solve_VWGSTP_exp("toronto", "EXP_solve_VWGSTP_toronto_size_V_1.csv", iteration_times, 25073, T, lambda, h, use_ENSteiner, use_IhlerA, true, true, true, 0, true, true, true, 0, false);
+			solve_VWGSTP_exp("toronto", "EXP_solve_VWGSTP_toronto_size_V_2.csv", iteration_times, 32073, T, lambda, h, use_ENSteiner, use_IhlerA, true, true, true, 0, true, true, true, 0, false);
+			solve_VWGSTP_exp("toronto", "EXP_solve_VWGSTP_toronto_size_V_3.csv", iteration_times, 39073, T, lambda, h, use_ENSteiner, use_IhlerA, true, true, true, 0, true, true, true, 0, false);
+			solve_VWGSTP_exp("toronto", "EXP_solve_VWGSTP_toronto_size_V_4.csv", iteration_times, V, T, lambda, h, use_ENSteiner, use_IhlerA, true, true, true, 0, true, true, true, 0, false);
 		}
 
 		/*size T*/
 		if (1) {
-			solve_VWGSTP_exp("toronto", "EXP_solve_VWGSTP_toronto_size_T_1.csv", iteration_times, V, 6, lambda, h, use_ENSteiner, use_IhlerA, true, true, true, 0, true, true, true, false);
-			solve_VWGSTP_exp("toronto", "EXP_solve_VWGSTP_toronto_size_T_2.csv", iteration_times, V, 7, lambda, h, use_ENSteiner, use_IhlerA, true, true, true, 0, true, true, true, false);
-			solve_VWGSTP_exp("toronto", "EXP_solve_VWGSTP_toronto_size_T_3.csv", iteration_times, V, 9, lambda, h, use_ENSteiner, use_IhlerA, true, true, true, 0, true, true, true, false);
+			solve_VWGSTP_exp("toronto", "EXP_solve_VWGSTP_toronto_size_T_1.csv", iteration_times, V, 6, lambda, h, use_ENSteiner, use_IhlerA, true, true, true, 0, true, true, true, 0, false);
+			solve_VWGSTP_exp("toronto", "EXP_solve_VWGSTP_toronto_size_T_2.csv", iteration_times, V, 7, lambda, h, use_ENSteiner, use_IhlerA, true, true, true, 0, true, true, true, 0, false);
+			solve_VWGSTP_exp("toronto", "EXP_solve_VWGSTP_toronto_size_T_3.csv", iteration_times, V, 9, lambda, h, use_ENSteiner, use_IhlerA, true, true, true, 0, true, true, true, 0, false);
 		}
 
 		/*size lambda*/
 		if (1) {
-			solve_VWGSTP_exp("toronto", "EXP_solve_VWGSTP_toronto_size_lambda_1.csv", iteration_times, V, T, 0, h, use_ENSteiner, use_IhlerA, true, true, true, 0, true, true, true, false);
-			solve_VWGSTP_exp("toronto", "EXP_solve_VWGSTP_toronto_size_lambda_2.csv", iteration_times, V, T, 0.67, h, use_ENSteiner, use_IhlerA, true, true, true, 0, true, true, true, false);
-			solve_VWGSTP_exp("toronto", "EXP_solve_VWGSTP_toronto_size_lambda_3.csv", iteration_times, V, T, 1, h, use_ENSteiner, use_IhlerA, true, true, true, 0, true, true, true, false);
+			solve_VWGSTP_exp("toronto", "EXP_solve_VWGSTP_toronto_size_lambda_1.csv", iteration_times, V, T, 0, h, use_ENSteiner, use_IhlerA, true, true, true, 0, true, true, true, 0, false);
+			solve_VWGSTP_exp("toronto", "EXP_solve_VWGSTP_toronto_size_lambda_2.csv", iteration_times, V, T, 0.67, h, use_ENSteiner, use_IhlerA, true, true, true, 0, true, true, true, 0, false);
+			solve_VWGSTP_exp("toronto", "EXP_solve_VWGSTP_toronto_size_lambda_3.csv", iteration_times, V, T, 1, h, use_ENSteiner, use_IhlerA, true, true, true, 0, true, true, true, 0, false);
 		}
 	}
 
@@ -2904,62 +2918,62 @@ void solve_VWGSTP_movielens_experiments() {
 
 	if (0) {
 		/*uniform V*/
-		if (1) {
+		if (0) {
 			use_ENSteiner = true, use_IhlerA = true, use_exIhlerA = true, use_PartialOPT = true, use_DPBF = true;
-			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_uniform_V_1.csv", iteration_times, 2423, T, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, true);
-			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_uniform_V_onlyexIhlerA.csv", iteration_times, 5423, T, lambda, h, 0, 0, 0, 1, 0, 0, 0, 0, 0, true);
+			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_uniform_V_1.csv", iteration_times, 2423, T, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, 0, true);
+			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_uniform_V_onlyexIhlerA.csv", iteration_times, 5423, T, lambda, h, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, true);
 			use_ENSteiner = false, use_IhlerA = false; use_exIhlerA = false; use_PartialOPT = false, use_DPBF = true;
-			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_uniform_V_2.csv", iteration_times, 22423, T, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, true);
-			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_uniform_V_3.csv", iteration_times, 42423, T, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, true);
-			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_uniform_V_4.csv", iteration_times, V, T, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, true);
+			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_uniform_V_2.csv", iteration_times, 22423, T, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, 0, true);
+			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_uniform_V_3.csv", iteration_times, 42423, T, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, 0, true);
+			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_uniform_V_4.csv", iteration_times, V, T, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, 0, true);
 		}
 
 		/*uniform T*/
-		if (1) {
+		if (0) {
 			use_ENSteiner = false, use_IhlerA = false; use_exIhlerA = false; use_PartialOPT = false, use_DPBF = true;
-			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_uniform_T_1.csv", iteration_times, V, 4, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, true);
-			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_uniform_T_2.csv", iteration_times, V, 6, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, true);
+			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_uniform_T_1.csv", iteration_times, V, 4, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, 0, true);
+			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_uniform_T_2.csv", iteration_times, V, 6, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, 0, true);
 			use_DPBF = false;
-			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_uniform_T_3.csv", iteration_times, V, 7, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, true);
+			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_uniform_T_3.csv", iteration_times, V, 7, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, 0, true);
 		}
 
 		/*uniform lambda*/
 		if (1) {
 			use_ENSteiner = false, use_IhlerA = false; use_exIhlerA = false; use_PartialOPT = false, use_DPBF = true;
-			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_uniform_lambda_1.csv", iteration_times, V, T, 0, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, true);
-			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_uniform_lambda_2.csv", iteration_times, V, T, 0.67, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, true);
-			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_uniform_lambda_3.csv", iteration_times, V, T, 1, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, true);
+			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_uniform_lambda_1.csv", iteration_times, V, T, 0, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, 0, true);
+			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_uniform_lambda_2.csv", iteration_times, V, T, 0.67, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, 0, true);
+			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_uniform_lambda_3.csv", iteration_times, V, T, 1, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, 0, true);
 		}
 	}
 
 
 	if (1) {
 		/*size V*/
-		if (1) {
+		if (0) {
 			use_ENSteiner = false, use_IhlerA = false, use_exIhlerA = true, use_PartialOPT = true, use_DPBF = true;
-			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_size_V_1.csv", iteration_times, 2000, T, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, false);
-			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_size_V_onlyexIhlerA.csv", iteration_times, 5423, T, lambda, h, 0, 0, 0, 1, 0, 0, 0, 0, 0, false);
+			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_size_V_1.csv", iteration_times, 2000, T, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, 0, false);
+			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_size_V_onlyexIhlerA.csv", iteration_times, 5423, T, lambda, h, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, false);
 			use_exIhlerA = false; use_PartialOPT = false, use_DPBF = true;
-			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_size_V_2.csv", iteration_times, 22423, T, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, false);			
-			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_size_V_3.csv", iteration_times, 42423, T, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, false);
-			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_size_V_4.csv", iteration_times, V, T, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, false);
+			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_size_V_2.csv", iteration_times, 22423, T, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, 0, false);
+			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_size_V_3.csv", iteration_times, 42423, T, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, 0, false);
+			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_size_V_4.csv", iteration_times, V, T, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, 0, false);
 		}
 
 		/*size T*/
-		if (1) {
+		if (0) {
 			use_ENSteiner = false, use_IhlerA = false; use_exIhlerA = false; use_PartialOPT = false, use_DPBF = true;
-			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_size_T_1.csv", iteration_times, V, 4, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, false);
-			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_size_T_2.csv", iteration_times, V, 6, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, false);
+			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_size_T_1.csv", iteration_times, V, 4, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, 0, false);
+			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_size_T_2.csv", iteration_times, V, 6, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, 0, false);
 			use_DPBF = false;
-			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_size_T_3.csv", iteration_times, V, 7, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, false);
+			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_size_T_3.csv", iteration_times, V, 7, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, 0, false);
 		}
 
 		/*size lambda*/
 		if (1) {
 			use_ENSteiner = false, use_IhlerA = false; use_exIhlerA = false; use_PartialOPT = false, use_DPBF = true;
-			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_size_lambda_1.csv", iteration_times, V, T, 0, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, false);
-			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_size_lambda_2.csv", iteration_times, V, T, 0.67, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, false);
-			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_size_lambda_3.csv", iteration_times, V, T, 1, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, false);
+			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_size_lambda_1.csv", iteration_times, V, T, 0, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, 0, false);
+			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_size_lambda_2.csv", iteration_times, V, T, 0.67, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, 0, false);
+			solve_VWGSTP_exp("movielens_25m", "EXP_solve_VWGSTP_movielens_size_lambda_3.csv", iteration_times, V, T, 1, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, 0, false);
 		}
 	}
 
@@ -2983,30 +2997,30 @@ void solve_VWGSTP_dblp_2498k_experiments() {
 		/*Vary_V*/
 		if (1) {
 			use_ENSteiner = false, use_IhlerA = false, use_exIhlerA = true, use_PartialOPT = true, use_DPBF = true;
-			solve_VWGSTP_exp("dblp_2498k", "EXP_solve_VWGSTP_dblp_2498k_uniform_Vary_V_1.csv", iteration_times, 297782, T, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, true);
+			solve_VWGSTP_exp("dblp_2498k", "EXP_solve_VWGSTP_dblp_2498k_uniform_Vary_V_1.csv", iteration_times, 297782, T, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, 0, true);
 			use_DPBF = false, use_PartialOPT = false;
-			solve_VWGSTP_exp("dblp_2498k", "EXP_solve_VWGSTP_dblp_2498k_uniform_Vary_V_2.csv", iteration_times, 1097782, T, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, true);
-			solve_VWGSTP_exp("dblp_2498k", "EXP_solve_VWGSTP_dblp_2498k_uniform_Vary_V_3.csv", iteration_times, 1797782, T, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, true);
+			solve_VWGSTP_exp("dblp_2498k", "EXP_solve_VWGSTP_dblp_2498k_uniform_Vary_V_2.csv", iteration_times, 1097782, T, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, 0, true);
+			solve_VWGSTP_exp("dblp_2498k", "EXP_solve_VWGSTP_dblp_2498k_uniform_Vary_V_3.csv", iteration_times, 1797782, T, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, 0, true);
 			use_ENSteiner = true, use_IhlerA = true;
-			solve_VWGSTP_exp("dblp_2498k", "EXP_solve_VWGSTP_dblp_2498k_uniform_Vary_V_4.csv", iteration_times, V, T, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, true);
+			solve_VWGSTP_exp("dblp_2498k", "EXP_solve_VWGSTP_dblp_2498k_uniform_Vary_V_4.csv", iteration_times, V, T, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, 0, true);
 		}
 
 
 		/*Vary_T*/
 		if (1) {
 			use_ENSteiner = false, use_IhlerA = false, use_exIhlerA = true, use_PartialOPT = false, use_DPBF = false;
-			solve_VWGSTP_exp("dblp_2498k", "EXP_solve_VWGSTP_dblp_2498k_uniform_Vary_T_1.csv", iteration_times, V, 5, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, true);
-			solve_VWGSTP_exp("dblp_2498k", "EXP_solve_VWGSTP_dblp_2498k_uniform_Vary_T_2.csv", iteration_times, V, 7, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, true);
-			solve_VWGSTP_exp("dblp_2498k", "EXP_solve_VWGSTP_dblp_2498k_uniform_Vary_T_3.csv", iteration_times, V, 8, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, true);
+			solve_VWGSTP_exp("dblp_2498k", "EXP_solve_VWGSTP_dblp_2498k_uniform_Vary_T_1.csv", iteration_times, V, 5, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, 0, true);
+			solve_VWGSTP_exp("dblp_2498k", "EXP_solve_VWGSTP_dblp_2498k_uniform_Vary_T_2.csv", iteration_times, V, 7, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, 0, true);
+			solve_VWGSTP_exp("dblp_2498k", "EXP_solve_VWGSTP_dblp_2498k_uniform_Vary_T_3.csv", iteration_times, V, 8, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, 0, true);
 		}
 
 
 		/*Vary_lambda*/
 		if (1) {
 			use_ENSteiner = false, use_IhlerA = false, use_exIhlerA = true, use_PartialOPT = false, use_DPBF = false;
-			solve_VWGSTP_exp("dblp_2498k", "EXP_solve_VWGSTP_dblp_2498k_uniform_Vary_lambda_1.csv", iteration_times, V, T, 0, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, true);
-			solve_VWGSTP_exp("dblp_2498k", "EXP_solve_VWGSTP_dblp_2498k_uniform_Vary_lambda_2.csv", iteration_times, V, T, 0.67, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, true);
-			solve_VWGSTP_exp("dblp_2498k", "EXP_solve_VWGSTP_dblp_2498k_uniform_Vary_lambda_3.csv", iteration_times, V, T, 1, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, true);
+			solve_VWGSTP_exp("dblp_2498k", "EXP_solve_VWGSTP_dblp_2498k_uniform_Vary_lambda_1.csv", iteration_times, V, T, 0, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, 0, true);
+			solve_VWGSTP_exp("dblp_2498k", "EXP_solve_VWGSTP_dblp_2498k_uniform_Vary_lambda_2.csv", iteration_times, V, T, 0.67, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, 0, true);
+			solve_VWGSTP_exp("dblp_2498k", "EXP_solve_VWGSTP_dblp_2498k_uniform_Vary_lambda_3.csv", iteration_times, V, T, 1, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, 0, true);
 		}
 	}
 
@@ -3016,37 +3030,95 @@ void solve_VWGSTP_dblp_2498k_experiments() {
 		/*Vary_V*/
 		if (1) {
 			use_ENSteiner = false, use_IhlerA = false, use_exIhlerA = true, use_PartialOPT = true, use_DPBF = true;
-			solve_VWGSTP_exp("dblp_2498k", "EXP_solve_VWGSTP_dblp_2498k_size_Vary_V_1.csv", iteration_times, 37782, T, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, false);
+			solve_VWGSTP_exp("dblp_2498k", "EXP_solve_VWGSTP_dblp_2498k_size_Vary_V_1.csv", iteration_times, 37782, T, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, 0, false);
 			use_PartialOPT = false;
-			solve_VWGSTP_exp("dblp_2498k", "EXP_solve_VWGSTP_dblp_2498k_size_Vary_V_onlyexIhlerA.csv", iteration_times, 197782, T, lambda, h, 0, 0, 0, 1, 0, 0, 0, 0, 0, false);
+			solve_VWGSTP_exp("dblp_2498k", "EXP_solve_VWGSTP_dblp_2498k_size_Vary_V_onlyexIhlerA.csv", iteration_times, 197782, T, lambda, h, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, false);
 			use_exIhlerA = false;
-			solve_VWGSTP_exp("dblp_2498k", "EXP_solve_VWGSTP_dblp_2498k_size_Vary_V_2.csv", iteration_times, 1097782, T, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, false);
-			solve_VWGSTP_exp("dblp_2498k", "EXP_solve_VWGSTP_dblp_2498k_size_Vary_V_3.csv", iteration_times, 1797782, T, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, false);
-			use_DPBF = false;
-			solve_VWGSTP_exp("dblp_2498k", "EXP_solve_VWGSTP_dblp_2498k_size_Vary_V_4.csv", iteration_times, V, T, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, false);
+			solve_VWGSTP_exp("dblp_2498k", "EXP_solve_VWGSTP_dblp_2498k_size_Vary_V_2.csv", iteration_times, 1097782, T, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, 0, false);
+			solve_VWGSTP_exp("dblp_2498k", "EXP_solve_VWGSTP_dblp_2498k_size_Vary_V_3.csv", iteration_times, 1797782, T, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, 0, false);
+			solve_VWGSTP_exp("dblp_2498k", "EXP_solve_VWGSTP_dblp_2498k_size_Vary_V_4.csv", iteration_times, V, T, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, 0, false);
 		}
 
 		/*Vary_T*/
 		if (1) {
-			use_ENSteiner = false, use_IhlerA = false, use_exIhlerA = false, use_PartialOPT = false, use_DPBF = false;
-			solve_VWGSTP_exp("dblp_2498k", "EXP_solve_VWGSTP_dblp_2498k_size_Vary_T_1.csv", iteration_times, V, 3, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, false);
-			solve_VWGSTP_exp("dblp_2498k", "EXP_solve_VWGSTP_dblp_2498k_size_Vary_T_2.csv", iteration_times, V, 4, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, false);
-			solve_VWGSTP_exp("dblp_2498k", "EXP_solve_VWGSTP_dblp_2498k_size_Vary_T_3.csv", iteration_times, V, 5, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, false);
+			use_ENSteiner = false, use_IhlerA = false, use_exIhlerA = false, use_PartialOPT = false, use_DPBF = true;
+			solve_VWGSTP_exp("dblp_2498k", "EXP_solve_VWGSTP_dblp_2498k_size_Vary_T_1.csv", iteration_times, V, 3, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, 0, false);
+			solve_VWGSTP_exp("dblp_2498k", "EXP_solve_VWGSTP_dblp_2498k_size_Vary_T_2.csv", iteration_times, V, 4, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, 0, false);
+			solve_VWGSTP_exp("dblp_2498k", "EXP_solve_VWGSTP_dblp_2498k_size_Vary_T_3.csv", iteration_times, V, 5, lambda, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, 0, false);
 		}
 
 
 		/*Vary_lambda*/
 		if (1) {
-			use_ENSteiner = false, use_IhlerA = false, use_exIhlerA = false, use_PartialOPT = false, use_DPBF = false;
-			solve_VWGSTP_exp("dblp_2498k", "EXP_solve_VWGSTP_dblp_2498k_size_Vary_lambda_1.csv", iteration_times, V, T, 0, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, false);
-			solve_VWGSTP_exp("dblp_2498k", "EXP_solve_VWGSTP_dblp_2498k_size_Vary_lambda_2.csv", iteration_times, V, T, 0.67, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, false);
-			solve_VWGSTP_exp("dblp_2498k", "EXP_solve_VWGSTP_dblp_2498k_size_Vary_lambda_3.csv", iteration_times, V, T, 1, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, false);
+			use_ENSteiner = false, use_IhlerA = false, use_exIhlerA = false, use_PartialOPT = false, use_DPBF = true;
+			solve_VWGSTP_exp("dblp_2498k", "EXP_solve_VWGSTP_dblp_2498k_size_Vary_lambda_1.csv", iteration_times, V, T, 0, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, 0, false);
+			solve_VWGSTP_exp("dblp_2498k", "EXP_solve_VWGSTP_dblp_2498k_size_Vary_lambda_2.csv", iteration_times, V, T, 0.67, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, 0, false);
+			solve_VWGSTP_exp("dblp_2498k", "EXP_solve_VWGSTP_dblp_2498k_size_Vary_lambda_3.csv", iteration_times, V, T, 1, h, use_ENSteiner, use_IhlerA, true, use_exIhlerA, true, 0, true, use_PartialOPT, use_DPBF, 0, false);
 		}
 	}
 
 
 }
 #pragma endregion solve_VWGSTP_dblp_2498k_experiments
+
+#pragma region
+void compare_DPBF_Basic() {
+
+	int iteration_times = 100;
+	double lambda = 0.33;
+
+	/*uniform*/
+	if (0) {
+		/*Toronto*/
+		if (0) {
+			int T = 5;
+			solve_VWGSTP_exp("toronto", "EXP_compare_DPBF_Basic_toronto.csv", iteration_times, 46073, T, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, true);
+		}
+
+		/*DBLP*/
+		if (0) {
+			int T = 5;
+			solve_VWGSTP_exp("dblp_2498k", "EXP_compare_DPBF_Basic_dblp.csv", iteration_times, 107782, T, lambda, 3, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, true);
+		}
+
+		/*MovieLens*/
+		if (1) {
+			int T = 5;
+			solve_VWGSTP_exp("movielens_25m", "EXP_compare_DPBF_Basic_movie.csv", iteration_times, 10423, T, lambda, 3, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, true);
+		}
+	}
+
+	
+
+	/*size*/
+	if (1) {
+		/*Toronto*/
+		if (1) {
+			int T = 5;
+			solve_VWGSTP_exp("toronto", "EXP_compare_DPBF_Basic_toronto_size.csv", iteration_times, 46073, T, lambda, 3, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0);
+		}
+
+		/*DBLP*/
+		if (1) {
+			int T = 5;
+			solve_VWGSTP_exp("dblp_2498k", "EXP_compare_DPBF_Basic_dblp_size.csv", iteration_times, 107782, T, lambda, 3, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0);
+		}
+
+		/*MovieLens*/
+		if (1) {
+			int T = 5;
+			solve_VWGSTP_exp("movielens_25m", "EXP_compare_DPBF_Basic_movie_size.csv", iteration_times, 10423, T, lambda, 3, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0);
+		}
+	}
+
+
+
+
+
+
+
+}
+#pragma endregion compare_DPBF_Basic
 
 #pragma region
 void vary_h() {
@@ -3056,10 +3128,10 @@ void vary_h() {
 	if (1) {
 		int T = 6;
 		double lambda = 0.33;
-		solve_VWGSTP_exp("toronto", "EXP_toronto_uniform_vary_h_1.csv", iteration_times, 46073, T, lambda, 3, 0, 0, 0, 0, 0, 0, 1, 1, 0, true);
-		solve_VWGSTP_exp("toronto", "EXP_toronto_uniform_vary_h_2.csv", iteration_times, 46073, T, lambda, 4, 0, 0, 0, 0, 0, 0, 1, 1, 0, true);
-		solve_VWGSTP_exp("toronto", "EXP_toronto_uniform_vary_h_3.csv", iteration_times, 46073, T, lambda, 5, 0, 0, 0, 0, 0, 0, 1, 1, 0, true);
-		solve_VWGSTP_exp("toronto", "EXP_toronto_uniform_vary_h_4.csv", iteration_times, 46073, T, lambda, 6, 0, 0, 0, 0, 0, 0, 1, 1, 0, true);
+		solve_VWGSTP_exp("toronto", "EXP_toronto_uniform_vary_h_1.csv", iteration_times, 46073, T, lambda, 3, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, true);
+		solve_VWGSTP_exp("toronto", "EXP_toronto_uniform_vary_h_2.csv", iteration_times, 46073, T, lambda, 4, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, true);
+		solve_VWGSTP_exp("toronto", "EXP_toronto_uniform_vary_h_3.csv", iteration_times, 46073, T, lambda, 5, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, true);
+		solve_VWGSTP_exp("toronto", "EXP_toronto_uniform_vary_h_4.csv", iteration_times, 46073, T, lambda, 6, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, true);
 	}
 
 
@@ -3088,9 +3160,6 @@ void solve_VWSTP() {
 
 
 
-
-
-
 int main()
 {
 	srand(time(NULL)); //  seed random number generator   
@@ -3101,7 +3170,7 @@ int main()
 	graph_hash_of_mixed_weighted_turn_on_value = 1e3;
 	graph_hash_of_mixed_weighted_turn_off_value = 1e1;
 
-	solve_VWGSTP_dblp_2498k_experiments();
+	solve_VWGSTP_toronto_experiments();
 
 
 	auto end = std::chrono::high_resolution_clock::now();
@@ -3109,6 +3178,8 @@ int main()
 
 
 	cout << "END    runningtime: " << runningtime << "s" << endl;
+
+	getchar();
 
 }
 
