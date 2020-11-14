@@ -42,7 +42,7 @@ using namespace std;
 #include <graph_hash_of_mixed_weighted/graph_hash_of_mixed_weighted_generate_random_groups_of_vertices.h>
 #include <graph_hash_of_mixed_weighted/graph_hash_of_mixed_weighted_save_for_GSTP.h>
 #include <graph_hash_of_mixed_weighted/graph_hash_of_mixed_weighted_read_for_GSTP.h>
-#include <graph_hash_of_mixed_weighted/graph_hash_of_mixed_weighted_BasicProgressive_vertex_edge_weighted.h>
+#include <graph_hash_of_mixed_weighted/graph_hash_of_mixed_weighted_BasicProgressive_vertex_edge_weighted_noG2.h>
 #include <graph_hash_of_mixed_weighted/graph_hash_of_mixed_weighted_DPBF_vertex_edge_weighted.h>
 #include <text mining/parse_string.h>
 #include <text mining/string_is_number.h>
@@ -57,8 +57,6 @@ using namespace std;
 /*header files in the Boost library: https://www.boost.org/*/
 #include <boost/random.hpp>
 #include <boost/heap/fibonacci_heap.hpp> 
-
-
 
 
 
@@ -3067,12 +3065,14 @@ void compare_DPBF_Basic() {
 	int iteration_times = 100;
 	double lambda = 0.33;
 
-	/*uniform*/
-	if (0) {
+	/*uniform
+	
+	the feasible solutions in Basic have 100-200 vertices for Toronto, but have 10-15 vertices for DBLP, but have 5-6 vertices for MovieLens*/
+	if (1) {
 		/*Toronto*/
-		if (0) {
+		if (1) {
 			int T = 5;
-			solve_VWGSTP_exp("toronto", "EXP_compare_DPBF_Basic_toronto.csv", iteration_times, 46073, T, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, true);
+			solve_VWGSTP_exp("toronto", "EXP_compare_DPBF_Basic_toronto.csv", iteration_times, 46073, T, lambda, 3, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, true);
 		}
 
 		/*DBLP*/
@@ -3082,7 +3082,7 @@ void compare_DPBF_Basic() {
 		}
 
 		/*MovieLens*/
-		if (1) {
+		if (0) {
 			int T = 5;
 			solve_VWGSTP_exp("movielens_25m", "EXP_compare_DPBF_Basic_movie.csv", iteration_times, 10423, T, lambda, 3, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, true);
 		}
@@ -3099,13 +3099,13 @@ void compare_DPBF_Basic() {
 		}
 
 		/*DBLP*/
-		if (1) {
+		if (0) {
 			int T = 5;
 			solve_VWGSTP_exp("dblp_2498k", "EXP_compare_DPBF_Basic_dblp_size.csv", iteration_times, 107782, T, lambda, 3, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0);
 		}
 
 		/*MovieLens*/
-		if (1) {
+		if (0) {
 			int T = 5;
 			solve_VWGSTP_exp("movielens_25m", "EXP_compare_DPBF_Basic_movie_size.csv", iteration_times, 10423, T, lambda, 3, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0);
 		}
