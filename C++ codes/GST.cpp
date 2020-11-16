@@ -42,7 +42,7 @@ using namespace std;
 #include <graph_hash_of_mixed_weighted/graph_hash_of_mixed_weighted_generate_random_groups_of_vertices.h>
 #include <graph_hash_of_mixed_weighted/graph_hash_of_mixed_weighted_save_for_GSTP.h>
 #include <graph_hash_of_mixed_weighted/graph_hash_of_mixed_weighted_read_for_GSTP.h>
-#include <graph_hash_of_mixed_weighted/graph_hash_of_mixed_weighted_BasicProgressive_vertex_edge_weighted_noG2.h>
+#include <graph_hash_of_mixed_weighted/graph_hash_of_mixed_weighted_BasicProgressive_vertex_edge_weighted_noG2_noMST.h>
 #include <graph_hash_of_mixed_weighted/graph_hash_of_mixed_weighted_DPBF_vertex_edge_weighted.h>
 #include <text mining/parse_string.h>
 #include <text mining/string_is_number.h>
@@ -3071,7 +3071,7 @@ void compare_DPBF_Basic() {
 	if (1) {
 		/*Toronto*/
 		if (1) {
-			int T = 5;
+			int T = 8;
 			solve_VWGSTP_exp("toronto", "EXP_compare_DPBF_Basic_toronto.csv", iteration_times, 46073, T, lambda, 3, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, true);
 		}
 
@@ -3094,7 +3094,7 @@ void compare_DPBF_Basic() {
 	if (1) {
 		/*Toronto*/
 		if (1) {
-			int T = 5;
+			int T = 8;
 			solve_VWGSTP_exp("toronto", "EXP_compare_DPBF_Basic_toronto_size.csv", iteration_times, 46073, T, lambda, 3, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0);
 		}
 
