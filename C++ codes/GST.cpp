@@ -944,6 +944,9 @@ graph_hash_of_mixed_weighted FastAPP(graph_hash_of_mixed_weighted& input_graph, 
 
 	/*time complexity: O(|T||E|+|T||V|log|V|)*/
 
+	int g_min = find_g_min(group_graph, cumpulsory_group_vertices); // find g_min
+	//cout << "g_min=" << g_min << endl;
+
 	/*time complexity: O(|V|+|E|)*/
 	graph_hash_of_mixed_weighted G_2 = update_G2_lambda(input_graph, lambda);
 
@@ -951,12 +954,13 @@ graph_hash_of_mixed_weighted FastAPP(graph_hash_of_mixed_weighted& input_graph, 
 	std::unordered_map<int, pair<std::unordered_map<int, double>, std::unordered_map<int, int>>> LWPs_to_groups;
 	for (auto it = cumpulsory_group_vertices.begin(); it != cumpulsory_group_vertices.end(); it++) {
 		int g_vertex = *it;
-		LWPs_to_groups[g_vertex] = find_LWPs_to_g(group_graph, G_2, g_vertex, lambda);
+		if (g_vertex != g_min) {
+			LWPs_to_groups[g_vertex] = find_LWPs_to_g(group_graph, G_2, g_vertex, lambda);
+		}
 	}
 	//G_2.clear();
 
-	int g_min = find_g_min(group_graph, cumpulsory_group_vertices); // find g_min
-	//cout << "g_min=" << g_min << endl;
+	
 
 
 	int v_min;
@@ -1219,6 +1223,9 @@ graph_hash_of_mixed_weighted ImprovAPP(graph_hash_of_mixed_weighted& input_graph
 
 	/*time complexity: O(|T||E|+|T||V|log|V| + |g_min||T|(|V|+log|T|))*/
 
+	int g_min = find_g_min(group_graph, cumpulsory_group_vertices); // find g_min
+	//cout << "g_min=" << g_min << endl;
+
 	/*time complexity: O(|V|+|E|)*/
 	graph_hash_of_mixed_weighted G_2 = update_G2_lambda(input_graph, lambda);
 
@@ -1226,15 +1233,11 @@ graph_hash_of_mixed_weighted ImprovAPP(graph_hash_of_mixed_weighted& input_graph
 	std::unordered_map<int, pair<std::unordered_map<int, double>, std::unordered_map<int, int>>> LWPs_to_groups;
 	for (auto it = cumpulsory_group_vertices.begin(); it != cumpulsory_group_vertices.end(); it++) {
 		int g_vertex = *it;
-		LWPs_to_groups[g_vertex] = find_LWPs_to_g(group_graph, G_2, g_vertex, lambda);
-		//cout << "LWPs_to_groups[" << g_vertex << "]:" << endl;
-		//print_unordered_map_int_double(LWPs_to_groups[g_vertex].first);
-		//print_unordered_map_int_int(LWPs_to_groups[g_vertex].second);
+		if (g_vertex != g_min) {
+			LWPs_to_groups[g_vertex] = find_LWPs_to_g(group_graph, G_2, g_vertex, lambda);
+		}
 	}
-	
-
-	int g_min = find_g_min(group_graph, cumpulsory_group_vertices); // find g_min
-	//cout << "g_min=" << g_min << endl;
+	//G_2.clear();
 
 
 	graph_hash_of_mixed_weighted theta_min;
@@ -3156,7 +3159,6 @@ void solve_VWSTP() {
 
 }
 #pragma endregion solve_VWSTP
-
 
 
 
