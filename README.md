@@ -1,5 +1,8 @@
 # Finding Group Steiner Trees in Graphs with both Vertex and Edge Weights
 
+These files are for the following publication:
+Yahui Sun, Xiaokui Xiao, Bin Cui, Saman Halgamuge, Theodoros Lappas, and Jun Luo. "Finding group Steiner trees in graphs with both vertex and edge weights", Proceedings of the VLDB Endowment (2021) 
+
 The introduction of these files are as follows. For any enquiry, please feel free to contact Yahui SUN: yahuisun@outlook.com
 
 
